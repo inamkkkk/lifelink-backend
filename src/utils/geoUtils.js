@@ -16,42 +16,75 @@ const { GEOCODE_API_KEY } = require('../config/config');
 const geocodeAddress = async (address) => {
   if (!GEOCODE_API_KEY) {
     console.warn('GEOCODE_API_KEY is not set. Geocoding will return placeholder data.');
+    // Return a mock GeoJSON structure if API key is missing
     return {
       type: 'Point',
-      coordinates: [0, 0], // Placeholder
-      properties: { city: 'Unknown', country: 'Unknown', address: address }
+      coordinates: [0, 0], // Placeholder coordinates
+      properties: { city: 'Unknown', country: 'Unknown', originalAddress: address }
     };
   }
 
   try {
-    // Example with a placeholder API, replace with actual API call
-    // const response = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GEOCODE_API_KEY}`);
-    // const data = response.data;
-    // if (data.status === 'OK' && data.results.length > 0) {
-    //   const { lat, lng } = data.results[0].geometry.location;
-    //   const cityComponent = data.results[0].address_components.find(comp => comp.types.includes('locality'));
-    //   const countryComponent = data.results[0].address_components.find(comp => comp.types.includes('country'));
+    // --- Step 1: Configure actual API endpoint and authentication ---
+    // For demonstration, we'll use OpenStreetMap Nominatim API.
+    // You might need to adjust the API endpoint and parameters based on your chosen service.
+    // Nominatim requires a user agent.
+    const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&addressdetails=1`;
 
-    //   return {
-    //     type: 'Point',
-    //     coordinates: [lng, lat],
-    //     properties: {
-    //       city: cityComponent ? cityComponent.long_name : 'Unknown',
-    //       country: countryComponent ? countryComponent.long_name : 'Unknown',
-    //       address: address
-    //     }
-    //   };
-    // }
-    
-    // Placeholder response
-    return {
-      type: 'Point',
-      coordinates: [Math.random() * 180 - 90, Math.random() * 360 - 180], // Random coordinates
-      properties: { city: 'Mock City', country: 'Mock Country', address: address }
-    };
+    const response = await axios.get(nominatimUrl, {
+      headers: {
+        'User-Agent': 'NodeGeoUtils/1.0' // Essential for Nominatim
+      }
+    });
+
+    const data = response.data;
+
+    // --- Step 2: Handle rate limiting and error responses ---
+    // Nominatim's status is usually indicated by the response code and data presence.
+    // A 429 error would indicate rate limiting, which we'll handle generically.
+    if (response.status >= 400) {
+      console.error(`Geocoding API returned an error for address "${address}" with status: ${response.status}`);
+      return null;
+    }
+
+    if (data && data.length > 0) {
+      const result = data[0];
+      const { lat, lon } = result;
+      const { city, country } = result.address;
+
+      // --- Step 3: Potentially cache results for frequently requested addresses ---
+      // Caching logic would typically go here, perhaps using a library like 'node-cache'
+      // or a Redis instance, before making the API call. For this example, we'll skip caching.
+
+      return {
+        type: 'Point',
+        coordinates: [parseFloat(lon), parseFloat(lat)], // GeoJSON standard is [longitude, latitude]
+        properties: {
+          city: city || 'Unknown',
+          country: country || 'Unknown',
+          originalAddress: address,
+          // You can add more properties from the API response if needed
+        }
+      };
+    } else {
+      // Address not found
+      console.warn(`Address "${address}" not found by the geocoding service.`);
+      return null;
+    }
 
   } catch (error) {
-    console.error(`Geocoding failed for address "${address}":`, error.message);
+    // --- Step 2 (cont.): Handle error responses ---
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error(`Geocoding API error for address "${address}": Status ${error.response.status}, Data: ${JSON.stringify(error.response.data)}`);
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error(`Geocoding API request failed for address "${address}": No response received.`, error.request);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error(`Geocoding utility error for address "${address}":`, error.message);
+    }
     return null;
   }
 };
