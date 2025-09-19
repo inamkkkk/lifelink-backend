@@ -2,11 +2,15 @@ const ErrorResponse = require('../utils/errorResponse');
 const logger = require('../utils/logger');
 
 const errorHandler = (err, req, res, next) => {
+  // Deep copy the error to avoid modifying the original error object
+  // This is especially important if the original error is an instance of a class
   let error = { ...err };
   error.message = err.message;
 
   // Log to console for dev
-  logger.error('Error Handler Middleware:', err);
+  // TODO: Implement more robust logging, e.g., to a file or a centralized logging service.
+  // Using Winston or Pino for more advanced logging capabilities.
+  logger.error('Error Handler Middleware:', { stack: err.stack, message: err.message });
 
   // Mongoose Bad ObjectId
   if (err.name === 'CastError') {
@@ -17,7 +21,7 @@ const errorHandler = (err, req, res, next) => {
   // Mongoose duplicate key
   if (err.code === 11000) {
     const field = Object.keys(err.keyValue);
-    const message = `Duplicate field value entered: ${field} '${err.keyValue[field]}', please use another value`;
+    const message = `Duplicate field value entered for ${field}: '${err.keyValue[field]}'. Please use another value.`;
     error = new ErrorResponse(message, 400);
   }
 
@@ -28,8 +32,8 @@ const errorHandler = (err, req, res, next) => {
   }
 
   // Joi validation error
-  if (err.isJoi) {
-    const message = err.details.map(d => d.message).join(', ');
+  if (error.isJoi) { // Changed err to error to check the copied object
+    const message = error.details.map(d => d.message).join(', ');
     error = new ErrorResponse(message, 400);
   }
 
@@ -45,8 +49,12 @@ const errorHandler = (err, req, res, next) => {
     error = new ErrorResponse(message, 401);
   }
 
+  // TODO: Add handling for other common error types (e.g., generic errors, custom application errors).
+  // Consider adding a default error message for unexpected errors.
+
   res.status(error.statusCode || 500).json({
     success: false,
+    // If error.message is not set, use a generic server error message.
     error: error.message || 'Server Error',
   });
 };
