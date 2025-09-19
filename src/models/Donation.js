@@ -2,12 +2,12 @@ const mongoose = require('mongoose');
 
 const DonationSchema = new mongoose.Schema({
   donorId: {
-    type: mongoose.Schema.ObjectId,
+    type: mongoose.Schema.Types.ObjectId, // Corrected: Use Types.ObjectId
     ref: 'User',
     required: true
   },
   hospitalId: {
-    type: mongoose.Schema.ObjectId,
+    type: mongoose.Schema.Types.ObjectId, // Corrected: Use Types.ObjectId
     ref: 'Hospital',
     required: true
   },
