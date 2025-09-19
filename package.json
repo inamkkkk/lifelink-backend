@@ -16,7 +16,7 @@
     "healthcare",
     "blood-donation"
   ],
-  "author": "",
+  "author": "LifeLink Team",
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",
