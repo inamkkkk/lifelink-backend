@@ -4,21 +4,31 @@ const LogSchema = new mongoose.Schema({
   type: {
     type: String,
     enum: ['info', 'warn', 'error', 'debug'],
-    default: 'info'
+    default: 'info',
   },
   module: {
     type: String,
-    required: true
+    required: true,
   },
   message: {
     type: String,
-    required: true
+    required: true,
   },
   timestamp: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
 });
+
+// TODO: Add a query to find logs by a date range.
+LogSchema.statics.findByDateRange = function (startDate, endDate) {
+  return this.find({
+    timestamp: {
+      $gte: startDate,
+      $lte: endDate,
+    },
+  });
+};
 
 LogSchema.index({ timestamp: -1 });
 LogSchema.index({ type: 1, module: 1 });
