@@ -58,7 +58,7 @@ const CampaignSchema = new mongoose.Schema({
 // Ensure endDate is after startDate
 CampaignSchema.pre('save', function (next) {
   if (this.startDate && this.endDate && this.startDate > this.endDate) {
-    next(new Error('End date must be after start date.'));
+    return next(new Error('End date must be after start date.'));
   }
   next();
 });
