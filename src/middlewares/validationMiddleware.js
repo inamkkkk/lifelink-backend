@@ -7,10 +7,16 @@ const ErrorResponse = require('../utils/errorResponse');
  * @param {string} property - The property of the request object to validate (e.g., 'body', 'params', 'query').
  */
 const validate = (schema, property = 'body') => (req, res, next) => {
+  // TODO: Handle potential errors if req[property] is undefined or not an object before calling validate.
+  if (!req[property] || typeof req[property] !== 'object') {
+    return next(new ErrorResponse('Request property to validate is missing or invalid.', 400));
+  }
+
   const { error } = schema.validate(req[property], { abortEarly: false });
   if (error) {
-    // Pass the Joi error directly to the error handling middleware
-    return next(error);
+    // TODO: Format Joi error messages for better user feedback.
+    const errorMessage = error.details.map(detail => detail.message).join(', ');
+    return next(new ErrorResponse(`Validation Error: ${errorMessage}`, 400));
   }
   next();
 };
@@ -33,8 +39,8 @@ exports.registerUserSchema = Joi.object({
     }).unknown(true)
   }).required(),
   bloodType: Joi.string().valid('A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-').required(),
-  medicalHistory: Joi.array().items(Joi.string().allow('')), // Allow empty strings for conditions
-  lastDonationDate: Joi.date().allow(null)
+  medicalHistory: Joi.array().items(Joi.string().allow('')).optional(), // Allow empty strings for conditions
+  lastDonationDate: Joi.date().iso().allow(null).optional()
 });
 
 exports.loginUserSchema = Joi.object({
@@ -58,7 +64,7 @@ exports.updateUserSchema = Joi.object({
   bloodType: Joi.string().valid('A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'),
   medicalHistory: Joi.array().items(Joi.string().allow('')), // Allow empty strings for conditions
   donationEligibility: Joi.boolean(),
-  lastDonationDate: Joi.date().allow(null)
+  lastDonationDate: Joi.date().iso().allow(null)
 }).min(1); // At least one field is required for update
 
 exports.scheduleDonationSchema = Joi.object({
@@ -108,8 +114,8 @@ exports.createCampaignSchema = Joi.object({
   title: Joi.string().trim().required(),
   description: Joi.string().trim().required(),
   hospitalId: Joi.string().hex().length(24).required(),
-  startDate: Joi.date().required(),
-  endDate: Joi.date().min(Joi.ref('startDate')).required(),
+  startDate: Joi.date().iso().required(),
+  endDate: Joi.date().iso().min(Joi.ref('startDate')).required(),
   location: Joi.object({
     type: Joi.string().valid('Point').required(),
     coordinates: Joi.array().items(Joi.number()).length(2).required(),
