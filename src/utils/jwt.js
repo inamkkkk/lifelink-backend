@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { JWT_SECRET, JWT_EXPIRE } = require('../config/config');
+const config = require('../config/config'); // Import the config module
 
 /**
  * Generates a JWT token for a given user ID.
@@ -7,8 +7,10 @@ const { JWT_SECRET, JWT_EXPIRE } = require('../config/config');
  * @returns {string} The signed JWT token.
  */
 const generateToken = (id) => {
-  return jwt.sign({ id }, JWT_SECRET, {
-    expiresIn: JWT_EXPIRE,
+  // TODO: Consider adding more claims to the token payload for better security and context.
+  // For example, add roles, permissions, or expiration time directly in the payload.
+  return jwt.sign({ id }, config.JWT_SECRET, {
+    expiresIn: config.JWT_EXPIRE,
   });
 };
 
@@ -19,8 +21,13 @@ const generateToken = (id) => {
  */
 const verifyToken = (token) => {
   try {
-    return jwt.verify(token, JWT_SECRET);
+    // TODO: Implement logic to handle token expiration gracefully.
+    // Currently, expired tokens will result in an error, which is caught and returns null.
+    // Consider returning specific error types or messages for expired tokens.
+    return jwt.verify(token, config.JWT_SECRET);
   } catch (err) {
+    // Log the error for debugging purposes, but don't expose sensitive info to the client.
+    console.error('JWT Verification Error:', err.message);
     return null;
   }
 };
