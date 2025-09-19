@@ -27,12 +27,18 @@ const BloodRequestSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'matched', 'fulfilled', 'cancelled'],    default: 'pending'
+    enum: ['pending', 'matched', 'fulfilled', 'cancelled'],
+    default: 'pending'
   },
   matchedDonorIds: [{
     type: mongoose.Schema.ObjectId,
     ref: 'User'
   }],
+  // TODO: Add a field to store the expiry date of the blood request.
+  // expiryDate: {
+  //   type: Date,
+  //   required: true
+  // },
   createdAt: {
     type: Date,
     default: Date.now
@@ -42,5 +48,6 @@ const BloodRequestSchema = new mongoose.Schema({
 // Index for efficient querying by recipient, hospital, bloodType, and status
 BloodRequestSchema.index({ recipientId: 1, hospitalId: 1, bloodType: 1, status: 1 });
 BloodRequestSchema.index({ bloodType: 1, urgency: 1, status: 1 });
+// TODO: Add indexes for fields that will be frequently queried, e.g., status and createdAt.
 
 module.exports = mongoose.model('BloodRequest', BloodRequestSchema);
