@@ -7,7 +7,11 @@ const router = express.Router();
 
 // Only hospital admin or system admin can create campaigns
 router.post('/create', protect, authorizeRoles('hospital_admin', 'system_admin'), validate(createCampaignSchema), createCampaign);
-router.get('/:id', protect, getCampaignDetails); // Anyone can view campaign details
+
+// Anyone can view campaign details. This route should be accessible without authentication for public visibility.
+// TODO: Re-evaluate the 'protect' middleware for getCampaignDetails if public access is intended.
+router.get('/:id', /* protect, */ getCampaignDetails); // Anyone can view campaign details
+
 // Donor can join a campaign
 router.post('/:id/join', protect, authorizeRoles('donor'), joinCampaign);
 
