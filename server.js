@@ -18,7 +18,7 @@ connectDB();
 const app = express();
 
 // Body parser
-app.use(express.json());
+app.use(express.json({ limit: '10kb' })); // Limit request body size for security
 
 // Dev logging middleware
 if (process.env.NODE_ENV === 'development') {
@@ -66,7 +66,7 @@ const PORT = process.env.PORT || 5000;
 
 const server = app.listen(
   PORT,
-  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`)
+  () => console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`) // Changed to arrow function for clarity
 );
 
 // Handle unhandled promise rejections
